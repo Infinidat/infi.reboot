@@ -19,14 +19,13 @@ class Reqeust(object):
     def _get_key_filepath(self):
         return os.path.join(self._get_tempdir(), '.'.join(["reboot", "request", self._name]))
 
-    
     def has_taken_place(self):
         if not os.path.exists(self._get_key_filepath()):
             # For POSIX operating systems, /tmp is persistent across reboots, so this is enough
             return True
         if self._get_current_uptime() < self._get_uptime_from_key_file():
             return True
-        if self.get_current_update < self._get_expected_uptime_if_no_reboot_ocurred():
+        if self.get_current_uptime() < self._get_expected_uptime_if_no_reboot_ocurred():
             return True
 
     def _get_expected_uptime_if_no_reboot_ocurred(self):
@@ -62,8 +61,8 @@ class Reqeust(object):
         raise NotImplementedError()
 
 def ask_for_reboot(key):
-    raise NotImplementedError()
+    Request(key).make_request()
 
 def has_reboot_took_place(key):
-    raise NotImplementedError()
+    return Request(key).has_taken_place()
 
