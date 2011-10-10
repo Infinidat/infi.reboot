@@ -18,10 +18,10 @@ class Request(object):
         if os.name == "nt":
             return os.environ.get("TEMP", os.path.join(os.environ.get("SYSTEMROOT", r"C:\WINDOWS"), "Temp"))
         else:
-            return os.path.join(os.path.sep, 'tmp')
+            return os.path.join(os.path.sep, 'var', 'run')
 
     def _get_key_filepath(self):
-        return os.path.join(self._get_tempdir(), '.'.join(["reboot", "request", self._name]))
+        return os.path.join(self._get_tempdir(), '.'.join(["infi", "reboot", "request", self._name]))
 
     def has_taken_place(self):
         if not os.path.exists(self._get_key_filepath()):
