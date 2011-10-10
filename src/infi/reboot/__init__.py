@@ -3,13 +3,16 @@ __import__("pkg_resources").declare_namespace(__name__)
 import os
 import time
 import json
+import logging
 
 from infi.pyutils.lazy import cached_method
 
 class Request(object):
-    def __init__(request_key):
+    def __init__(self, request_key):
         super(Request, self).__init__()
-        self._name = name
+        self._name = request_key
+        self.time = self._get_current_time()
+        self.uptime = self._get_current_uptime()
 
     def _get_tempdir(self):
         if os.name == "nt":
@@ -23,14 +26,22 @@ class Request(object):
     def has_taken_place(self):
         if not os.path.exists(self._get_key_filepath()):
             # For POSIX operating systems, /tmp is persistent across reboots, so this is enough
+            logging.debug("key file {!r} does not exist, thus a reboot took place".format(self._get_key_filepath()))
             return True
-        if self._get_current_uptime() < self._get_uptime_from_key_file():
+        current = self.uptime
+        previous = self._get_uptime_from_key_file()
+        if current < previous:
+            logging.debug("current uptime {} is lower than uptime from key file {}, thus a reboot took place".format(current, previous))
             return True
-        if self._get_current_uptime() < self._get_expected_uptime_if_no_reboot_ocurred():
+        expected = self._get_expected_uptime_if_no_reboot_ocurred()
+        if current < expected:
+            logging.debug("current uptime {} is lower than expected uptime from key file {}, thus a reboot took place".format(current, expected))
             return True
+        logging.debug("current uptime {} is higher than expected uptime from key file {}, thus a reboot did not took place".format(current, expected))
+        return False
 
     def _get_expected_uptime_if_no_reboot_ocurred(self):
-        return self._get_uptime_from_key_file() + self._get_current_time() - self._get_time_from_key_file()
+        return self._get_uptime_from_key_file() + self.time - self._get_time_from_key_file()
 
     def _get_snapshot_from_key_file(self):
         with open(self._get_key_filepath(), 'r') as fd:
@@ -38,10 +49,10 @@ class Request(object):
             return resultdict
 
     def _get_time_from_key_file(self):
-        return self._get_snapshot_from_key_file['time']
+        return self._get_snapshot_from_key_file()['time']
 
     def _get_uptime_from_key_file(self):
-        return self._get_snapshot_from_key_file['uptime']
+        return self._get_snapshot_from_key_file()['uptime']
 
     def _get_current_time(self):
         return time.time()
@@ -51,22 +62,22 @@ class Request(object):
         return BOOT_TIME
 
     def _get_current_uptime(self):
-        return self._get_current_time() - self._get_current_time()
+        return self.time - self._get_system_boot_time()
 
     def make_request(self):
-        self._remove_key_file()
+        if os.path.exists(self._get_key_filepath()):
+            self._remove_key_file()
         self._write_snapshot_to_key_file()
 
     def _remove_key_file(self):
         path = self._get_key_filepath()
-        if not os.path.exists(path):
+        if os.path.exists(path):
             os.remove(path)
 
     def _write_snapshot_to_key_file(self):
         path = self._get_key_filepath()
         with open(path, 'w') as fd:
-            json.dump(dict(uptime=self._get_current_uptime(),
-                           time=self._get_current_time(), indent=4), fd)
+            json.dump(dict(uptime=self.uptime, time=self.time), fd, indent=4)
 
 def ask_for_reboot(key):
     Request(key).make_request()
