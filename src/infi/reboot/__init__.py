@@ -26,7 +26,7 @@ class Request(object):
             return True
         if self._get_current_uptime() < self._get_uptime_from_key_file():
             return True
-        if self.get_current_uptime() < self._get_expected_uptime_if_no_reboot_ocurred():
+        if self._get_current_uptime() < self._get_expected_uptime_if_no_reboot_ocurred():
             return True
 
     def _get_expected_uptime_if_no_reboot_ocurred(self):
