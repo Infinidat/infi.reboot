@@ -16,12 +16,13 @@ def random_string(length):
 
 def debug_request(request):
     logging.debug("current_time = {}".format(request._get_current_timestamp()))
+    logging.debug("current_uptime = {}".format(request._get_current_uptime()))
     logging.debug("key_file = {}".format(request._get_content_from_key_file()))
 
 class RequestTest(unittest.TestCase):
     def test_get_timestamp(self):
         request = Request(None)
-        self.assertIsInstance(request._get_current_timestamp(), int)
+        self.assertIsInstance(request._get_current_timestamp(), float)
 
     def test_request_works(self):
         random_key = random_string(6)
@@ -43,12 +44,6 @@ class RequestMockTest(unittest.TestCase):
         ask_for_reboot(key)
         self.assertFalse(has_reboot_took_place(key))
 
-    def test_reboot_did_not_take_place_after_some_time(self):
-        key = random_string(6)
-        ask_for_reboot(key)
-        time.sleep(2)
-        self.assertFalse(has_reboot_took_place(key))
-
     def test_reboot_took_place__timestamp_forward(self):
         key = random_string(6)
         ask_for_reboot(key)
@@ -56,36 +51,15 @@ class RequestMockTest(unittest.TestCase):
         request.make_request()
         self.assertFalse(request.has_taken_place())
         request.timestamp += 2
-        request.uptime += 2
-        self.assertFalse(request.has_taken_place())
-
-    def test_reboot_took_place__uptime_backwards(self):
-        key = random_string(6)
-        ask_for_reboot(key)
-        request = Request(key)
-        request.make_request()
-        self.assertFalse(request.has_taken_place())
-        request.uptime -= 2
         self.assertTrue(request.has_taken_place())
 
-    def test_reboot_took_place__timestamp_and_uptime_forward(self):
+    def test_reboot_took_place__timestamp_backward(self):
         key = random_string(6)
         ask_for_reboot(key)
         request = Request(key)
         request.make_request()
         self.assertFalse(request.has_taken_place())
-        request.timestamp += 100
-        request.uptime += 10
-        self.assertTrue(request.has_taken_place())
-
-    def test_reboot_took_place__timestamp_forward__uptime__backwards(self):
-        key = random_string(6)
-        ask_for_reboot(key)
-        request = Request(key)
-        request.make_request()
-        self.assertFalse(request.has_taken_place())
-        request.timestamp += 2
-        request.uptime -= 2
+        request.timestamp -= 2
         self.assertTrue(request.has_taken_place())
 
 
