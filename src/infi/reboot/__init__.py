@@ -85,7 +85,6 @@ class Request(object):
     def _write_timestamp_to_key_file(self):
         path = self._get_key_filepath()
         with open(path, 'w') as fd:
-            print path
             json.dump(dict(timestamp=self.timestamp, uptime=self.uptime), fd, indent=4)
 
 def ask_for_reboot(key):
