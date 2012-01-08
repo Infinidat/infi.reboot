@@ -68,7 +68,7 @@ class Request(object):
             return int(func() / 1000)
         elif os.path.exists('/proc/uptime'):
                 with open('/proc/uptime') as fd:
-                    return int(fd.read().splitlines()[0].split([0]))
+                    return int(fd.read().splitlines()[0].split()[0].split('.')[0])
         else:
             return self._get_current_timestamp() - int(psutil.Process(0).create_time)
 
