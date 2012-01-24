@@ -3,7 +3,6 @@ __import__("pkg_resources").declare_namespace(__name__)
 import os
 import time
 import json
-import psutil
 import ctypes
 import math
 
@@ -68,9 +67,9 @@ class Request(object):
             return int(func() / 1000)
         elif os.path.exists('/proc/uptime'):
                 with open('/proc/uptime') as fd:
-                    return int(fd.read().splitlines()[0].split([0]))
+                    return int(fd.read().splitlines()[0].split()[0].split('.')[0])
         else:
-            return self._get_current_timestamp() - int(psutil.Process(0).create_time)
+            raise RuntimeError("Unsupported Operating System")
 
     def make_request(self):
         if os.path.exists(self._get_key_filepath()):

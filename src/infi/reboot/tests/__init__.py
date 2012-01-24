@@ -88,4 +88,3 @@ class RequestMockTest(unittest.TestCase):
         request.uptime -= 2
         self.assertTrue(request.has_taken_place())
 
-
