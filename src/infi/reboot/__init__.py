@@ -5,6 +5,7 @@ import time
 import json
 import ctypes
 import math
+import re
 
 from logging import getLogger
 log = getLogger()
@@ -66,8 +67,16 @@ class Request(object):
             func = getattr(dll, 'GetTickCount64', getattr(dll, 'GetTickCount'))
             return int(func() / 1000)
         elif os.path.exists('/proc/uptime'):
-                with open('/proc/uptime') as fd:
-                    return int(fd.read().splitlines()[0].split()[0].split('.')[0])
+            # posix
+            with open('/proc/uptime') as fd:
+                return int(fd.read().splitlines()[0].split()[0].split('.')[0])
+        elif os.path.exists('/usr/sbin/sysctl'):
+            # osx
+            from infi.execute import execute
+            boottime = execute(["sysctl", "kern.boottime"])
+            boottime.get_stdout()
+            # kern.boottime: { sec = 1329817960, usec = 0 } Tue Feb 21 11:52:40 2012
+            return self._get_current_timestamp() - int(re.search('sec\W=\W(\d+)', boottime.get_stdout()).group(1))
         else:
             raise RuntimeError("Unsupported Operating System")
 
