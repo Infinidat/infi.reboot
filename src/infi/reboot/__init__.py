@@ -41,7 +41,10 @@ class Request(object):
         if previous_uptime > self.uptime:
             log.debug("uptime is low, thus a reboot took place")
             return True
-        elif self.timestamp - self.uptime > previous_timestamp - previous_uptime:
+        elif self.timestamp - self.uptime > previous_timestamp - previous_uptime +1:
+            # Since there is a very small different between update and timestamp, there is a chance that we miss by one
+            # current timestamp = 1332419021, recorded timestamp = 1332418799
+            # current uptime = 19000, recorded uptime = 18779
             log.debug("more than just uptime has passed since the reboot, thus a reboot took place")
             return True
         log.debug("a reboot did not take place")
@@ -69,6 +72,7 @@ class Request(object):
         elif os.path.exists('/proc/uptime'):
             # posix
             with open('/proc/uptime') as fd:
+                # e.g. 22909.49 22806.13
                 return int(fd.read().splitlines()[0].split()[0].split('.')[0])
         elif os.path.exists('/usr/sbin/sysctl'):
             # osx
