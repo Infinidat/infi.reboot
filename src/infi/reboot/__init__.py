@@ -8,7 +8,7 @@ import math
 import re
 
 from logging import getLogger
-log = getLogger()
+log = getLogger(__name__)
 
 def _get_default_tempdir():
     if os.name == "nt":
