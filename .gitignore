@@ -39,3 +39,4 @@ bootstrap.py
 
 
 src/infi/reboot/__version__.py
+.cache
