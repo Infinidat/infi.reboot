@@ -81,8 +81,36 @@ class Request(object):
             boottime.get_stdout()
             # kern.boottime: { sec = 1329817960, usec = 0 } Tue Feb 21 11:52:40 2012
             return self._get_current_timestamp() - int(re.search('sec\W=\W(\d+)', boottime.get_stdout()).group(1))
+        elif os.path.exists('/var/adm/utmpx'):
+            return self._get_uptime_solaris()
         else:
             raise RuntimeError("Unsupported Operating System")
+
+    def _get_uptime_solaris(self):
+        from ctypes import Structure, POINTER, CDLL, c_short, c_int, c_char, c_long, sizeof
+        class UTmpStruct(Structure):
+            _fields_ = [
+                ("ut_user", c_char * 32),
+                ("ut_id", c_char * 4),
+                ("ut_line", c_char * 32),
+                ("ut_pid", c_int),
+                ("ut_type", c_short),
+                ("padding_1", c_char * ((sizeof(c_int) - sizeof(c_short)) % 4)),
+                ("e_termination", c_short),
+                ("e_exit", c_short),
+                ("tv_sec", c_long),
+                ("tv_usec", c_long),
+                ("_dontcare", c_char * 100), # even more but it's unimportant
+            ]
+        setutxent = getattr(CDLL('libc.so'), 'setutxent')
+        getutxent = getattr(CDLL('libc.so'), 'getutxent')
+        setutxent()
+        getutxent.restype = POINTER(UTmpStruct)
+        while True:
+            res = getutxent()
+            if not res or 'system boot' == res.contents.ut_line:
+                break
+        return self._get_current_timestamp() - int(res.contents.tv_sec)
 
     def make_request(self):
         if os.path.exists(self._get_key_filepath()):
