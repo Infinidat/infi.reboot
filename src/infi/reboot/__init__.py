@@ -83,6 +83,8 @@ class Request(object):
             return self._get_current_timestamp() - int(re.search('sec\W=\W(\d+)', boottime.get_stdout()).group(1))
         elif os.path.exists('/var/adm/utmpx'):
             return self._get_uptime_solaris()
+        elif os.path.exists(os.path.join(os.path.dirname(__file__), 'aix_uptime.so')):
+            return self._get_uptime_aix()
         else:
             raise RuntimeError("Unsupported Operating System")
 
@@ -111,6 +113,12 @@ class Request(object):
             if not res or 'system boot' == res.contents.ut_line:
                 break
         return self._get_current_timestamp() - int(res.contents.tv_sec)
+
+    def _get_uptime_aix(self):
+        from ctypes import CDLL
+        aix_so_path = os.path.join(os.path.dirname(__file__), 'aix_uptime.so')
+        aix_uptime = getattr(CDLL(aix_so_path), 'aix_uptime')
+        return aix_uptime()
 
     def make_request(self):
         if os.path.exists(self._get_key_filepath()):
