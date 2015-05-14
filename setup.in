@@ -43,9 +43,9 @@ def setup():
     from setuptools import Extension
     import platform
     SETUP_INFO['packages'] = find_packages('src')
-    if platform.system() == "AIX":
-        aix_extension = Extension('infi.reboot.aix_uptime',
-            sources=['src/infi/reboot/aix_uptime.c'])
+    if platform.system() in ["AIX", "SunOS"]:
+        aix_extension = Extension('infi.reboot._posix_uptime',
+            sources=['src/infi/reboot/_posix_uptime.c'])
         SETUP_INFO['ext_modules'] = [aix_extension]
     _setup(**SETUP_INFO)
 

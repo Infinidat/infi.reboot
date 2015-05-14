@@ -1,6 +1,8 @@
 #include <utmpx.h>
+#include <string.h>
+#include <time.h>
 
-int aix_uptime()
+int posix_uptime(void)
 {
     int nBootTime = 0;
     int nCurrentTime = time(NULL);
@@ -15,4 +17,8 @@ int aix_uptime()
     }
     endutxent();
     return nCurrentTime - nBootTime;
+}
+
+void init_posix_uptime(void)
+{
 }

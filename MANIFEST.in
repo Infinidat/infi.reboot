@@ -1,1 +1,1 @@
-recursive-include src aix_uptime.c
+recursive-include src _posix_uptime.c
