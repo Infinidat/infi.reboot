@@ -130,6 +130,9 @@ class Request(object):
 def ask_for_reboot(key):
     Request(key).make_request()
 
-def has_reboot_took_place(key):
+def has_reboot_taken_place(key):
     return Request(key).has_taken_place()
 
+def has_reboot_took_place(key):
+    # backward compatibility
+    return has_reboot_taken_place(key)
