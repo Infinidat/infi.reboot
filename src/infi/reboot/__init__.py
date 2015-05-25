@@ -4,8 +4,7 @@ import os
 import time
 import json
 import ctypes
-import math
-import re
+import platform
 
 from logging import getLogger
 log = getLogger(__name__)
@@ -70,47 +69,34 @@ class Request(object):
             func = getattr(dll, 'GetTickCount64', getattr(dll, 'GetTickCount'))
             return int(func() / 1000)
         elif os.path.exists('/proc/uptime'):
-            # posix
+            # linux
             with open('/proc/uptime') as fd:
                 # e.g. 22909.49 22806.13
                 return int(fd.read().splitlines()[0].split()[0].split('.')[0])
-        elif os.path.exists('/usr/sbin/sysctl'):
-            # osx
-            from infi.execute import execute
-            boottime = execute(["sysctl", "kern.boottime"])
-            boottime.get_stdout()
-            # kern.boottime: { sec = 1329817960, usec = 0 } Tue Feb 21 11:52:40 2012
-            return self._get_current_timestamp() - int(re.search('sec\W=\W(\d+)', boottime.get_stdout()).group(1))
-        elif os.path.exists('/var/adm/utmpx'):
-            return self._get_uptime_solaris()
+        elif platform.system() == "Darwin":
+            return self._get_uptime_osx()
+        elif platform.system() in ["AIX", "SunOS"]:
+            return self._get_uptime_posix()
         else:
             raise RuntimeError("Unsupported Operating System")
 
-    def _get_uptime_solaris(self):
-        from ctypes import Structure, POINTER, CDLL, c_short, c_int, c_char, c_long, sizeof
-        class UTmpStruct(Structure):
-            _fields_ = [
-                ("ut_user", c_char * 32),
-                ("ut_id", c_char * 4),
-                ("ut_line", c_char * 32),
-                ("ut_pid", c_int),
-                ("ut_type", c_short),
-                ("padding_1", c_char * ((sizeof(c_int) - sizeof(c_short)) % 4)),
-                ("e_termination", c_short),
-                ("e_exit", c_short),
-                ("tv_sec", c_long),
-                ("tv_usec", c_long),
-                ("_dontcare", c_char * 100), # even more but it's unimportant
-            ]
-        setutxent = getattr(CDLL('libc.so'), 'setutxent')
-        getutxent = getattr(CDLL('libc.so'), 'getutxent')
-        setutxent()
-        getutxent.restype = POINTER(UTmpStruct)
-        while True:
-            res = getutxent()
-            if not res or 'system boot' == res.contents.ut_line:
-                break
-        return self._get_current_timestamp() - int(res.contents.tv_sec)
+    def _get_uptime_osx(self):
+        import struct
+        libc = ctypes.CDLL('libc.dylib')
+        # determine how much space we need
+        sz = ctypes.c_uint(0)
+        libc.sysctlbyname('kern.boottime', None, ctypes.byref(sz), None, 0)
+        # and now for real
+        buf = ctypes.create_string_buffer(sz.value)
+        libc.sysctlbyname('kern.boottime', buf, ctypes.byref(sz), None, 0)
+        sec, _ = struct.unpack('@LL', buf.raw)
+        return self._get_current_timestamp() - sec
+
+    def _get_uptime_posix(self):
+        from ctypes import CDLL
+        posix_so_path = os.path.join(os.path.dirname(__file__), '_posix_uptime.so')
+        posix_uptime = getattr(CDLL(posix_so_path), 'posix_uptime')
+        return posix_uptime()
 
     def make_request(self):
         if os.path.exists(self._get_key_filepath()):
@@ -130,6 +116,9 @@ class Request(object):
 def ask_for_reboot(key):
     Request(key).make_request()
 
-def has_reboot_took_place(key):
+def has_reboot_taken_place(key):
     return Request(key).has_taken_place()
 
+def has_reboot_took_place(key):
+    # backward compatibility
+    return has_reboot_taken_place(key)
