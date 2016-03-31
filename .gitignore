@@ -33,3 +33,5 @@ __version__.py
 .bzr/
 .svn/
 .hg/
+.cache
+eggs
