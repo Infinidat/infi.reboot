@@ -65,9 +65,7 @@ class Request(object):
 
     def _get_current_uptime(self):
         if os.name == 'nt':
-            dll = ctypes.windll.kernel32
-            func = getattr(dll, 'GetTickCount64', getattr(dll, 'GetTickCount'))
-            return int(func() / 1000)
+            return self._get_uptime_windows()
         elif os.path.exists('/proc/uptime'):
             # linux
             with open('/proc/uptime') as fd:
@@ -79,6 +77,18 @@ class Request(object):
             return self._get_uptime_posix()
         else:
             raise RuntimeError("Unsupported Operating System")
+
+    def _get_uptime_windows(self):
+        dll = ctypes.windll.kernel32
+        func = getattr(dll, 'GetTickCount64', None)
+        if func is not None:
+            func.restype = ctypes.c_ulonglong
+            log.debug("uptime function: GetTickCount64")
+        else:
+            func = getattr(dll, 'GetTickCount')
+            func.restype = ctypews.c_ulong
+            log.debug("uptime function: GetTickCount")
+        return int(func() / 1000)
 
     def _get_uptime_osx(self):
         import struct
