@@ -33,8 +33,15 @@ class Request(object):
             # For POSIX operating systems, /tmp is persistent across reboots, so this
             log.debug("key file {!r} does not exist, thus a reboot took place".format(self._get_key_filepath()))
             return True
-        previous_timestamp = self._get_timestamp_from_key_file()
-        previous_uptime = self._get_uptime_from_key_file()
+        try:
+            key_file_content = self._get_content_from_key_file()
+        except ValueError:
+            msg = "key file {!r} contains corrupted data. Deleting it. Assuming reboot took place"
+            log.debug(msg.format(self._get_key_filepath()))
+            self._remove_key_file()
+            return True
+        previous_timestamp = key_file_content['timestamp']
+        previous_uptime = key_file_content['uptime']
         log.debug("current timestamp = {}, recorded timestamp = {}".format(self.timestamp, previous_timestamp))
         log.debug("current uptime = {}, recorded uptime = {}".format(self.uptime, previous_uptime))
         if previous_uptime > self.uptime:
@@ -53,12 +60,6 @@ class Request(object):
         with open(self._get_key_filepath(), 'r') as fd:
             resultdict = json.load(fd)
             return resultdict
-
-    def _get_timestamp_from_key_file(self):
-        return self._get_content_from_key_file()['timestamp']
-
-    def _get_uptime_from_key_file(self):
-        return self._get_content_from_key_file()['uptime']
 
     def _get_current_timestamp(self):
         return int(time.time())
