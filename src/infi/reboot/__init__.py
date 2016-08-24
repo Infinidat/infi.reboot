@@ -122,7 +122,7 @@ class Request(object):
 
     def _write_timestamp_to_key_file(self):
         path = self._get_key_filepath()
-        log.debug("writing timestamp={}, uptime={} to {!r}".format(self.timestamp, self.uptime, self.path))
+        log.debug("writing timestamp={}, uptime={} to {!r}".format(self.timestamp, self.uptime, path))
         with open(path, 'w') as fd:
             json.dump(dict(timestamp=self.timestamp, uptime=self.uptime), fd, indent=4)
 
