@@ -42,6 +42,7 @@ class Request(object):
             return True
         previous_timestamp = key_file_content['timestamp']
         previous_uptime = key_file_content['uptime']
+        log.debug("key file {!r} exists with the following details".format(self._get_key_filepath()))
         log.debug("current timestamp = {}, recorded timestamp = {}".format(self.timestamp, previous_timestamp))
         log.debug("current uptime = {}, recorded uptime = {}".format(self.uptime, previous_uptime))
         if previous_uptime > self.uptime:
@@ -121,6 +122,7 @@ class Request(object):
 
     def _write_timestamp_to_key_file(self):
         path = self._get_key_filepath()
+        log.debug("writing timestamp={}, uptime={} to {!r}".format(self.timestamp, self.uptime, self.path))
         with open(path, 'w') as fd:
             json.dump(dict(timestamp=self.timestamp, uptime=self.uptime), fd, indent=4)
 
