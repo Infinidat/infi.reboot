@@ -97,10 +97,10 @@ class Request(object):
         libc = ctypes.CDLL('libc.dylib')
         # determine how much space we need
         sz = ctypes.c_uint(0)
-        libc.sysctlbyname('kern.boottime', None, ctypes.byref(sz), None, 0)
+        libc.sysctlbyname(b'kern.boottime', None, ctypes.byref(sz), None, 0)
         # and now for real
         buf = ctypes.create_string_buffer(sz.value)
-        libc.sysctlbyname('kern.boottime', buf, ctypes.byref(sz), None, 0)
+        libc.sysctlbyname(b'kern.boottime', buf, ctypes.byref(sz), None, 0)
         sec, _ = struct.unpack('@LL', buf.raw)
         return self._get_current_timestamp() - sec
 
