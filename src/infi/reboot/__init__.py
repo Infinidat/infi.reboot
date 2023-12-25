@@ -105,9 +105,12 @@ class Request(object):
         return self._get_current_timestamp() - sec
 
     def _get_uptime_posix(self):
+        from sysconfig import get_config_var
         from ctypes import CDLL
-        posix_so_path = os.path.join(os.path.dirname(__file__), '_posix_uptime.so')
-        posix_uptime = getattr(CDLL(posix_so_path), 'posix_uptime')
+        parent = os.path.dirname(__file__)
+        name = '_posix_uptime' + get_config_var('EXT_SUFFIX')
+        path = os.path.join(parent, name)
+        posix_uptime = getattr(CDLL(path), 'posix_uptime')
         return posix_uptime()
 
     def make_request(self):
